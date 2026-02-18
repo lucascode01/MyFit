@@ -20,6 +20,8 @@ EXPOSE 8000
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
-# Railway injects PORT - app must listen on it
+# Run migrations then start server
 ENV PORT=8000
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 config.wsgi:application"]
+COPY backend/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
