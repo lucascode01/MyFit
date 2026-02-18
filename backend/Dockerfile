@@ -20,5 +20,6 @@ EXPOSE 8000
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
-# Use gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "config.wsgi:application"]
+# Railway injects PORT - app must listen on it
+ENV PORT=8000
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 config.wsgi:application"]
