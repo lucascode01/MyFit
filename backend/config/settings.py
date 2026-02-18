@@ -17,6 +17,9 @@ if '*.railway.app' in ALLOWED_HOSTS:
     ALLOWED_HOSTS.remove('*.railway.app')
     ALLOWED_HOSTS.append('.railway.app')
 
+# URL do frontend - rota / redireciona para aqui
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
