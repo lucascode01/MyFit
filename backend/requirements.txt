@@ -1,0 +1,13 @@
+# Django 4.2+ required (parse_header_parameters)
+Django>=4.2,<5
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.3
+django-cors-headers>=4.3
+psycopg2-binary>=2.9
+python-decouple>=3.8
+dj-database-url>=2.1
+django-filter>=23.5
+Pillow>=10.0
+boto3>=1.33
+django-storages>=1.14
+gunicorn>=21.0
