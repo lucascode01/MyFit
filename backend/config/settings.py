@@ -10,7 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='dev-secret-change-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,backend').split(',')
+_allowed = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,backend').split(',')
+ALLOWED_HOSTS = [h.strip() for h in _allowed if h.strip()]
+# Django uses leading dot for subdomain wildcard; *.railway.app doesn't work
+if '*.railway.app' in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.remove('*.railway.app')
+    ALLOWED_HOSTS.append('.railway.app')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
