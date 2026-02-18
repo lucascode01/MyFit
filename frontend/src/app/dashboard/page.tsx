@@ -34,10 +34,10 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Treinos</h1>
-      <div className="flex flex-wrap gap-2 mb-4">
+      <h1 className="text-xl sm:text-2xl font-semibold mb-4">Treinos</h1>
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-2 mb-4">
         <select
-          className="input-field w-auto min-w-[160px]"
+          className="input-field w-full sm:w-auto sm:min-w-[180px]"
           value={categorySlug}
           onChange={(e) => setCategorySlug(e.target.value)}
         >
@@ -51,13 +51,13 @@ export default function DashboardPage() {
         <input
           type="search"
           placeholder="Buscar..."
-          className="input-field flex-1 min-w-[120px] max-w-xs"
+          className="input-field w-full sm:flex-1 sm:min-w-[120px] sm:max-w-xs"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       {selectedVideo ? (
-        <div className="mb-6">
+        <div className="mb-6 -mx-4 sm:mx-0">
           <VideoPlayer
             video={selectedVideo}
             onClose={() => setSelectedVideo(null)}
@@ -65,11 +65,11 @@ export default function DashboardPage() {
         </div>
       ) : null}
       {loading ? (
-        <p className="text-white/60">Carregando vídeos...</p>
+        <p className="text-white/60 py-4">Carregando vídeos...</p>
       ) : videos.length === 0 ? (
-        <p className="text-white/60">Nenhum vídeo encontrado.</p>
+        <p className="text-white/60 py-4">Nenhum vídeo encontrado.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {videos.map((v) => (
             <VideoCard
               key={v.id}

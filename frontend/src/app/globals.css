@@ -8,24 +8,40 @@
   --brand-orange-light: #fb923c;
   --brand-orange-dark: #ea580c;
   --brand-white: #fafafa;
+  /* Safe area for notched devices */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 body {
   @apply bg-brand-black text-brand-white antialiased;
   min-height: 100vh;
+  min-height: 100dvh;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-orange hover:bg-brand-orange-dark text-white font-medium px-4 py-2.5 rounded-lg transition-colors;
+    @apply bg-brand-orange hover:bg-brand-orange-dark active:scale-[0.98] text-white font-medium px-4 py-2.5 min-h-[44px] sm:min-h-0 rounded-lg transition-colors touch-manipulation;
   }
   .btn-secondary {
-    @apply border border-brand-orange text-brand-orange hover:bg-brand-orange/10 font-medium px-4 py-2.5 rounded-lg transition-colors;
+    @apply border border-brand-orange text-brand-orange hover:bg-brand-orange/10 active:scale-[0.98] font-medium px-4 py-2.5 min-h-[44px] sm:min-h-0 rounded-lg transition-colors touch-manipulation;
   }
   .input-field {
-    @apply w-full bg-white/5 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent;
+    @apply w-full bg-white/5 border border-white/20 rounded-lg px-4 py-2.5 min-h-[44px] sm:min-h-0 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent text-base;
   }
   .card {
     @apply bg-white/5 border border-white/10 rounded-xl overflow-hidden;
+  }
+  .container-touch {
+    @apply px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full;
   }
 }

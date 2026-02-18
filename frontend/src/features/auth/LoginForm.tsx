@@ -36,12 +36,12 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <Link href="/" className="mb-8">
-        <Image src="/logo.png" alt="MY personal" width={200} height={80} className="object-contain" priority />
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6 sm:p-6 pb-safe-bottom">
+      <Link href="/" className="mb-6 sm:mb-8 shrink-0">
+        <Image src="/logo.png" alt="MY personal" width={200} height={80} className="object-contain w-[180px] sm:w-[200px] h-auto" priority />
       </Link>
-      <div className="w-full max-w-sm card p-6">
-        <h1 className="text-xl font-semibold text-center mb-6">Entrar</h1>
+      <div className="w-full max-w-sm card p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-semibold text-center mb-5 sm:mb-6">Entrar</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -64,7 +64,7 @@ export function LoginForm() {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-        <p className="text-center text-white/60 text-sm mt-4">
+        <p className="text-center text-white/60 text-sm mt-4 break-words">
           Não tem conta?{' '}
           <Link href="/register" className="text-brand-orange hover:underline">
             Cadastre-se

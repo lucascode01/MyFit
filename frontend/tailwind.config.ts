@@ -20,6 +20,10 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
+      spacing: {
+        'safe-top': 'var(--safe-top)',
+        'safe-bottom': 'var(--safe-bottom)',
+      },
     },
   },
   plugins: [],

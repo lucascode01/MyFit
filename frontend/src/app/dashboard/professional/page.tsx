@@ -89,10 +89,10 @@ export default function ProfessionalDashboardPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-xl font-semibold">Meus vídeos</h1>
-        <div className="flex gap-2">
-          <Link href="/dashboard" className="btn-secondary text-sm">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 sm:gap-4 mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold">Meus vídeos</h1>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Link href="/dashboard" className="btn-secondary text-sm text-center sm:text-left">
             Ver todos os treinos
           </Link>
           <button
@@ -106,9 +106,9 @@ export default function ProfessionalDashboardPage() {
       </div>
 
       {uploadOpen && (
-        <div className="card p-6 mb-6">
+        <div className="card p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Enviar vídeo</h2>
-          <form onSubmit={handleUpload} className="space-y-4 max-w-md">
+          <form onSubmit={handleUpload} className="space-y-4 w-full max-w-md">
             <input
               type="text"
               placeholder="Título *"
@@ -152,8 +152,8 @@ export default function ProfessionalDashboardPage() {
               ))}
             </select>
             {uploadError && <p className="text-red-400 text-sm">{uploadError}</p>}
-            <div className="flex gap-2">
-              <button type="submit" className="btn-primary" disabled={uploading}>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button type="submit" className="btn-primary w-full sm:w-auto" disabled={uploading}>
                 {uploading ? 'Enviando...' : 'Enviar'}
               </button>
               <button
@@ -162,7 +162,7 @@ export default function ProfessionalDashboardPage() {
                   setUploadOpen(false);
                   setUploadError('');
                 }}
-                className="btn-secondary"
+                className="btn-secondary w-full sm:w-auto"
               >
                 Cancelar
               </button>
@@ -178,11 +178,11 @@ export default function ProfessionalDashboardPage() {
       ) : null}
 
       {loading ? (
-        <p className="text-white/60">Carregando...</p>
+        <p className="text-white/60 py-4">Carregando...</p>
       ) : videos.length === 0 ? (
-        <p className="text-white/60">Você ainda não enviou nenhum vídeo.</p>
+        <p className="text-white/60 py-4">Você ainda não enviou nenhum vídeo.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {videos.map((v) => (
             <VideoCard key={v.id} video={v} onClick={() => setSelectedVideo(v)} />
           ))}
