@@ -19,5 +19,5 @@ urlpatterns = [
     path('api/webhooks/stripe/', user_stripe_views.stripe_webhook),
 ]
 
-if settings.DEBUG and settings.MEDIA_ROOT:
+if settings.MEDIA_ROOT:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

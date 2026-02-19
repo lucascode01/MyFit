@@ -151,19 +151,24 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000'
+    default='http://localhost:3000,http://127.0.0.1:3000,https://myfitt.up.railway.app'
 ).split(',')
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 
-# S3 / Storage
+# S3 / Storage (USE_S3=True no Railway + variáveis AWS_* para vídeos persistirem)
 USE_S3 = config('USE_S3', default=False, cast=bool)
 if USE_S3:
     AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
     AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
-    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
-    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
-    AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')
+    AWS_STORAGE_BUCKET_NAME = (config('AWS_STORAGE_BUCKET_NAME', default='') or '').strip()
+    if not AWS_STORAGE_BUCKET_NAME:
+        raise ValueError('USE_S3=True exige AWS_STORAGE_BUCKET_NAME.')
+    _region = (config('AWS_S3_REGION_NAME', default='us-east-1') or 'us-east-1').strip()
+    import re
+    _m = re.search(r'([a-z]{2}-[a-z]+-\d+)', _region, re.I)
+    AWS_S3_REGION_NAME = _m.group(1).lower() if _m else _region
+    AWS_S3_CUSTOM_DOMAIN = (config('AWS_S3_CUSTOM_DOMAIN', default='') or '').strip() or None
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     AWS_DEFAULT_ACL = 'public-read'
     DEFAULT_FILE_STORAGE = 'videos.storage.MediaStorage'

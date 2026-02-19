@@ -10,7 +10,7 @@ if getattr(settings, 'USE_S3', False):
     class MediaStorage(S3Boto3Storage):
         location = 'media'
         file_overwrite = False
-        custom_domain = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None)
-        querystring_auth = True
+        custom_domain = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None) or None
+        querystring_auth = False
 else:
     MediaStorage = default_storage.__class__
