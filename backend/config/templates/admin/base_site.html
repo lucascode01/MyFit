@@ -1,0 +1,108 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | MYfit Admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">MYfit Admin</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  :root {
+    --myfit-black: #0a0a0a;
+    --myfit-orange: #f97316;
+    --myfit-orange-hover: #ea580c;
+    --myfit-orange-light: rgba(249, 115, 22, 0.15);
+  }
+  #header {
+    background: var(--myfit-black) !important;
+    border-bottom: 3px solid var(--myfit-orange);
+  }
+  #branding h1 a {
+    color: #fafafa !important;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  #branding h1 a:hover {
+    color: var(--myfit-orange) !important;
+  }
+  #user-tools {
+    color: #e5e5e5;
+  }
+  #user-tools a {
+    color: var(--myfit-orange) !important;
+  }
+  #user-tools a:hover {
+    color: #fb923c !important;
+  }
+  .module h2, .module caption {
+    background: var(--myfit-black) !important;
+    color: var(--myfit-orange) !important;
+    border-bottom: 1px solid rgba(249, 115, 22, 0.3);
+  }
+  .module caption a {
+    color: var(--myfit-orange) !important;
+  }
+  a:link, a:visited {
+    color: var(--myfit-orange);
+  }
+  a:hover {
+    color: var(--myfit-orange-hover);
+  }
+  .button, input[type=submit], input[type=button], .submit-row input {
+    background: var(--myfit-orange) !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 600;
+  }
+  .button:hover, input[type=submit]:hover, input[type=button]:hover {
+    background: var(--myfit-orange-hover) !important;
+  }
+  .button.default, input[type=submit].default {
+    background: var(--myfit-orange-hover) !important;
+  }
+  #content-main .module table thead th {
+    background: var(--myfit-orange-light) !important;
+    color: var(--myfit-orange);
+  }
+  .login #container {
+    border: 2px solid var(--myfit-orange);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(249, 115, 22, 0.2);
+  }
+  .login #header {
+    border-radius: 10px 10px 0 0;
+  }
+  .login form input[type=text], .login form input[type=password] {
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .login form input[type=text]:focus, .login form input[type=password]:focus {
+    border-color: var(--myfit-orange);
+    box-shadow: 0 0 0 2px var(--myfit-orange-light);
+  }
+  .login .submit-row {
+    border: none;
+    padding: 1rem 0;
+  }
+  .login .submit-row input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  #content {
+    background: #fafafa;
+  }
+  .dashboard #content-main .module {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+</style>
+{% endblock %}
