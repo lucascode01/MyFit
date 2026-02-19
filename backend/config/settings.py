@@ -20,6 +20,16 @@ if '*.railway.app' in ALLOWED_HOSTS:
 # URL do frontend - rota / redireciona para aqui
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 
+# CSRF: origens confiáveis (Django 4+) para admin e formulários via HTTPS
+_csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins if o.strip()]
+# Fallback: se não definiu, usa hosts que não são curinga (ex.: myfit-production.up.railway.app)
+if not CSRF_TRUSTED_ORIGINS:
+    for h in ALLOWED_HOSTS:
+        if h and not h.startswith('.'):
+            CSRF_TRUSTED_ORIGINS.append('https://' + h)
+            CSRF_TRUSTED_ORIGINS.append('http://' + h)
+
 # Stripe (assinatura mensal para profissionais)
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
