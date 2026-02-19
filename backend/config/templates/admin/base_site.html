@@ -1,6 +1,10 @@
 {% extends "admin/base.html" %}
 {% load i18n %}
 
+{% block extrahead %}
+{% if FRONTEND_URL %}<link rel="icon" type="image/png" href="{{ FRONTEND_URL }}/logo.png">{% endif %}
+{% endblock %}
+
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | MYfit Admin{% endblock %}
 
 {% block branding %}
