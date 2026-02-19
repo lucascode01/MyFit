@@ -20,6 +20,15 @@ class IsProfessional(permissions.BasePermission):
         return request.user.role in ('professional', 'admin')
 
 
+class HasActiveSubscription(permissions.BasePermission):
+    """Professional must have active Stripe subscription (admin bypass)."""
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.has_active_subscription
+
+
 class IsProfessionalOrReadOnly(permissions.BasePermission):
     """Professionals can write; authenticated users can read."""
 

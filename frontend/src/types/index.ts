@@ -8,6 +8,14 @@ export interface ProfessionalProfile {
   updated_at: string;
 }
 
+export type SubscriptionStatus =
+  | 'active'
+  | 'canceled'
+  | 'past_due'
+  | 'unpaid'
+  | 'trialing'
+  | '';
+
 export interface User {
   id: number;
   email: string;
@@ -17,7 +25,18 @@ export interface User {
   role: UserRole;
   role_display: string;
   professional_profile: ProfessionalProfile | null;
+  subscription_status: SubscriptionStatus;
+  has_active_subscription: boolean;
   date_joined: string;
+}
+
+export interface LinkedStudent {
+  id: number;
+  student_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  created_at: string;
 }
 
 export interface Category {

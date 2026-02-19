@@ -1,4 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const AUTH_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '') + '/api/auth';
 
 export type ApiResponse<T> =
   | { success: true; data: T }
@@ -64,4 +65,26 @@ export function getMediaUrl(path: string | null | undefined): string {
   if (path.startsWith('http')) return path;
   const base = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
   return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
+/** Chamadas que usam o base da API de auth (api/auth/). */
+export async function apiAuth<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const token = await getStoredToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  if (token) (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${AUTH_URL}/${path.replace(/^\//, '')}`, { ...options, headers });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return {
+      success: false,
+      error: {
+        message: json?.error?.message || json?.detail || 'Erro na requisição',
+        details: json?.error?.details ?? json,
+      },
+    };
+  }
+  return { success: true, data: json.data ?? json };
 }

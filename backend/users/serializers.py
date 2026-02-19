@@ -8,6 +8,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source='get_role_display', read_only=True)
     professional_profile = serializers.SerializerMethodField()
+    has_active_subscription = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -20,9 +21,11 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
             'role_display',
             'professional_profile',
+            'subscription_status',
+            'has_active_subscription',
             'date_joined',
         )
-        read_only_fields = ('id', 'role', 'date_joined')
+        read_only_fields = ('id', 'role', 'date_joined', 'subscription_status')
 
     def get_professional_profile(self, obj):
         if not hasattr(obj, 'professional_profile'):

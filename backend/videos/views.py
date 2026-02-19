@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.response import Response
 
-from core.permissions import IsProfessional, IsProfessionalOrReadOnly, IsOwnerOrAdmin
+from core.permissions import IsProfessional, IsProfessionalOrReadOnly, IsOwnerOrAdmin, HasActiveSubscription
 from .models import Category, Video
 from .serializers import (
     CategorySerializer,
@@ -20,24 +20,42 @@ class CategoryListView(generics.ListAPIView):
 
 
 class VideoListView(generics.ListAPIView):
-    """Listagem de vídeos com filtros e paginação."""
+    """Listagem de vídeos: alunos veem só dos profissionais a que estão vinculados."""
     serializer_class = VideoListSerializer
     filterset_class = VideoFilter
 
     def get_queryset(self):
-        return Video.objects.filter(is_active=True).select_related('category', 'professional', 'professional__user')
+        qs = Video.objects.filter(is_active=True).select_related('category', 'professional', 'professional__user')
+        user = self.request.user
+        if user.role == 'user':
+            # Aluno: apenas vídeos dos profissionais que o têm como aluno
+            from users.models import ProfessionalStudent
+            pro_ids = ProfessionalStudent.objects.filter(student=user).values_list('professional_id', flat=True)
+            # Vídeo.professional é ProfessionalProfile; professional.user_id é o User profissional
+            qs = qs.filter(professional__user_id__in=pro_ids)
+        # professional/admin continuam vendo todos aqui? Não: profissionais usam /videos/me/. Então esta listagem é para alunos. Admin pode ver todos - então para admin não filtramos.
+        elif user.role == 'admin':
+            pass  # admin vê todos
+        return qs
 
 
 class VideoDetailView(generics.RetrieveAPIView):
-    """Detalhe de um vídeo."""
+    """Detalhe de um vídeo. Alunos só acessam vídeos dos seus profissionais."""
     serializer_class = VideoDetailSerializer
-    queryset = Video.objects.filter(is_active=True).select_related('category', 'professional', 'professional__user')
+
+    def get_queryset(self):
+        qs = Video.objects.filter(is_active=True).select_related('category', 'professional', 'professional__user')
+        if self.request.user.role == 'user':
+            from users.models import ProfessionalStudent
+            pro_ids = ProfessionalStudent.objects.filter(student=self.request.user).values_list('professional_id', flat=True)
+            qs = qs.filter(professional__user_id__in=pro_ids)
+        return qs
 
 
 class VideoCreateView(generics.CreateAPIView):
-    """Upload/criação de vídeo (apenas profissional)."""
+    """Upload/criação de vídeo (profissional com assinatura ativa)."""
     serializer_class = VideoCreateUpdateSerializer
-    permission_classes = [IsProfessional]
+    permission_classes = [IsProfessional, HasActiveSubscription]
 
     def perform_create(self, serializer):
         serializer.save()
@@ -53,9 +71,9 @@ class VideoCreateView(generics.CreateAPIView):
 
 
 class VideoMyListView(generics.ListAPIView):
-    """Vídeos do profissional logado."""
+    """Vídeos do profissional logado (requer assinatura ativa)."""
     serializer_class = VideoListSerializer
-    permission_classes = [IsProfessional]
+    permission_classes = [IsProfessional, HasActiveSubscription]
     filterset_class = VideoFilter
 
     def get_queryset(self):
