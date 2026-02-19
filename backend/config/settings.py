@@ -149,10 +149,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,https://myfitt.up.railway.app'
-).split(',')
+_cors_raw = config('CORS_ALLOWED_ORIGINS', default='').strip()
+if _cors_raw:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_raw.split(',') if o.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://myfitt.up.railway.app']
+# Garante que a origem do frontend esteja sempre permitida
+_frontend = (config('FRONTEND_URL', default='').rstrip('/'))
+if _frontend and _frontend not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(_frontend)
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 

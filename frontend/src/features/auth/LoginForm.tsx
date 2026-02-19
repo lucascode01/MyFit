@@ -20,19 +20,25 @@ export function LoginForm() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = await api<AuthTokens>('/auth/login/', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error.message);
-      return;
+    try {
+      const res = await api<AuthTokens>('/auth/login/', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.success) {
+        setError(res.error?.message ?? 'Erro ao entrar.');
+        return;
+      }
+      login(res.data!.access, res.data!.refresh, res.data!.user);
+      const role = res.data!.user.role;
+      if (role === 'professional' || role === 'admin') router.push('/dashboard/professional');
+      else router.push('/dashboard');
+    } catch (err) {
+      setError('Não foi possível conectar. Verifique a URL da API e se o backend está no ar.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
-    login(res.data.access, res.data.refresh, res.data.user);
-    const role = res.data.user.role;
-    if (role === 'professional' || role === 'admin') router.push('/dashboard/professional');
-    else router.push('/dashboard');
   }
 
   return (
