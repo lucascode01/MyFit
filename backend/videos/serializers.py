@@ -10,6 +10,27 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at')
 
 
+class CategoryCreateSerializer(serializers.ModelSerializer):
+    """Criação de categoria: slug gerado a partir do nome."""
+    class Meta:
+        model = Category
+        fields = ('name', 'description')
+
+    def create(self, validated_data):
+        from django.utils.text import slugify
+        name = validated_data.get('name', '').strip()
+        if not name:
+            raise serializers.ValidationError({'name': 'Nome é obrigatório.'})
+        base_slug = slugify(name) or 'categoria'
+        slug = base_slug
+        n = 0
+        while Category.objects.filter(slug=slug).exists():
+            n += 1
+            slug = f'{base_slug}-{n}'
+        validated_data['slug'] = slug
+        return Category.objects.create(**validated_data)
+
+
 class VideoListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     professional_name = serializers.SerializerMethodField()

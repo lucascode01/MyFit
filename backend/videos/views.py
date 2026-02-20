@@ -5,6 +5,7 @@ from core.permissions import IsProfessional, IsProfessionalOrReadOnly, IsOwnerOr
 from .models import Category, Video
 from .serializers import (
     CategorySerializer,
+    CategoryCreateSerializer,
     VideoListSerializer,
     VideoDetailSerializer,
     VideoCreateUpdateSerializer,
@@ -12,11 +13,25 @@ from .serializers import (
 from .filters import VideoFilter
 
 
-class CategoryListView(generics.ListAPIView):
-    """Lista categorias (autenticado)."""
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+class CategoryListCreateView(generics.ListCreateAPIView):
+    """Lista categorias (autenticado) e cria categoria (profissional ou admin)."""
+    queryset = Category.objects.all().order_by('name')
+    permission_classes = [IsProfessionalOrReadOnly]
     pagination_class = None
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CategoryCreateSerializer
+        return CategorySerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({
+            'success': True,
+            'data': CategorySerializer(serializer.instance).data,
+        }, status=201)
 
 
 class VideoListView(generics.ListAPIView):

@@ -55,7 +55,19 @@ export default function ProfessionalDashboardPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDesc, setNewCategoryDesc] = useState('');
+  const [categoryError, setCategoryError] = useState('');
+  const [addingCategory, setAddingCategory] = useState(false);
+
   const loadVideos = async () => {
+    const res = await api<PaginatedResponse<Video>>('/videos/me/');
+    if (res.success) setVideos(res.data.results ?? []);
+  };
+
+  const loadCategories = async () => {
+    const res = await api<Category[]>('/categories/');
+    if (res.success) setCategories(Array.isArray(res.data) ? res.data : []);
     const res = await api<PaginatedResponse<Video>>('/videos/me/');
     if (res.success) setVideos(res.data.results ?? []);
   };
@@ -130,6 +142,29 @@ export default function ProfessionalDashboardPage() {
   async function handleRemoveStudent(id: number) {
     const res = await apiAuth<unknown>(`students/${id}/`, { method: 'DELETE' });
     if (res.success) setStudents((s) => s.filter((x) => x.id !== id));
+  }
+
+  async function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault();
+    setCategoryError('');
+    const name = newCategoryName.trim();
+    if (!name) {
+      setCategoryError('Informe o nome da categoria.');
+      return;
+    }
+    setAddingCategory(true);
+    const res = await api<Category>('/categories/', {
+      method: 'POST',
+      body: JSON.stringify({ name, description: newCategoryDesc.trim() || undefined }),
+    });
+    setAddingCategory(false);
+    if (res.success && res.data) {
+      setCategories((c) => [...c, res.data!].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewCategoryName('');
+      setNewCategoryDesc('');
+    } else {
+      setCategoryError(res.error?.message ?? 'Erro ao criar categoria.');
+    }
   }
 
   function openEditModal(video: Video) {
@@ -303,6 +338,40 @@ export default function ProfessionalDashboardPage() {
                 </li>
               ))}
             </ul>
+          )}
+        </div>
+      )}
+
+      {hasActiveSubscription && (
+        <div className="card p-4 sm:p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-3">Categorias</h2>
+          <p className="text-white/60 text-sm mb-4">
+            Crie categorias para organizar seus vídeos. Ao enviar um vídeo, escolha em qual categoria ele se encaixa.
+          </p>
+          <form onSubmit={handleAddCategory} className="space-y-2 mb-4 max-w-md">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                placeholder="Nome da categoria *"
+                className="input-field flex-1"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+              />
+              <button type="submit" className="btn-primary shrink-0" disabled={addingCategory}>
+                {addingCategory ? 'Criando...' : 'Criar categoria'}
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Descrição (opcional)"
+              className="input-field w-full"
+              value={newCategoryDesc}
+              onChange={(e) => setNewCategoryDesc(e.target.value)}
+            />
+          </form>
+          {categoryError && <p className="text-red-400 text-sm mb-2">{categoryError}</p>}
+          {categories.length > 0 && (
+            <p className="text-white/60 text-sm">Categorias disponíveis: {categories.map((c) => c.name).join(', ')}</p>
           )}
         </div>
       )}
