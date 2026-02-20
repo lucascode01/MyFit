@@ -175,7 +175,8 @@ if USE_S3:
     AWS_S3_REGION_NAME = _m.group(1).lower() if _m else _region
     AWS_S3_CUSTOM_DOMAIN = (config('AWS_S3_CUSTOM_DOMAIN', default='') or '').strip() or None
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-    AWS_DEFAULT_ACL = 'public-read'
+    # Bucket com "Object ownership: Bucket owner enforced" não aceita ACLs; use política do bucket para leitura pública
+    AWS_DEFAULT_ACL = None
     DEFAULT_FILE_STORAGE = 'videos.storage.MediaStorage'
 else:
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

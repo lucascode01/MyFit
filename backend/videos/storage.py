@@ -12,5 +12,7 @@ if getattr(settings, 'USE_S3', False):
         file_overwrite = False
         custom_domain = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None) or None
         querystring_auth = False
+        # Bucket com ACLs desabilitadas (Bucket owner enforced) — leitura pública via política do bucket
+        default_acl = None
 else:
     MediaStorage = default_storage.__class__
