@@ -22,6 +22,7 @@ export async function api<T>(
   if (token) (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  if (res.status === 204) return { success: true, data: null as unknown as T };
   const json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
