@@ -71,6 +71,7 @@ class VideoCreateUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         professional = self.context['request'].user.professional_profile
+        validated_data['is_active'] = True
         return Video.objects.create(professional=professional, **validated_data)
 
     def validate_category(self, value):
