@@ -500,6 +500,20 @@ export default function ProfessionalDashboardPage() {
                   Cancelar
                 </button>
               </div>
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editingVideo) {
+                      setVideoToDelete(editingVideo);
+                      setEditingVideo(null);
+                    }
+                  }}
+                  className="text-red-400 hover:text-red-300 text-sm font-medium"
+                >
+                  Excluir vídeo
+                </button>
+              </div>
             </form>
           </div>
         </div>
