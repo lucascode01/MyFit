@@ -11,23 +11,28 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class CategoryCreateSerializer(serializers.ModelSerializer):
-    """Criação de categoria: slug gerado a partir do nome."""
+    """Criação de categoria: slug gerado a partir do nome; pertence ao profissional logado."""
     class Meta:
         model = Category
         fields = ('name', 'description')
 
     def create(self, validated_data):
         from django.utils.text import slugify
+        request = self.context.get('request')
+        professional = getattr(request.user, 'professional_profile', None)
+        if not professional:
+            raise serializers.ValidationError('Apenas profissionais podem criar categorias.')
         name = validated_data.get('name', '').strip()
         if not name:
             raise serializers.ValidationError({'name': 'Nome é obrigatório.'})
         base_slug = slugify(name) or 'categoria'
         slug = base_slug
         n = 0
-        while Category.objects.filter(slug=slug).exists():
+        while Category.objects.filter(professional=professional, slug=slug).exists():
             n += 1
             slug = f'{base_slug}-{n}'
         validated_data['slug'] = slug
+        validated_data['professional'] = professional
         return Category.objects.create(**validated_data)
 
 
@@ -96,6 +101,12 @@ class VideoCreateUpdateSerializer(serializers.ModelSerializer):
         return Video.objects.create(professional=professional, **validated_data)
 
     def validate_category(self, value):
-        if value is not None and not Category.objects.filter(pk=value.pk).exists():
+        if value is None:
+            return value
+        if not Category.objects.filter(pk=value.pk).exists():
             raise serializers.ValidationError('Categoria inválida.')
+        request = self.context.get('request')
+        profile = getattr(request.user, 'professional_profile', None) if request else None
+        if profile and value.professional_id is not None and value.professional_id != profile.pk:
+            raise serializers.ValidationError('Só é possível usar categorias que você criou.')
         return value

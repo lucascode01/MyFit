@@ -14,10 +14,24 @@ from .filters import VideoFilter
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
-    """Lista categorias (autenticado) e cria categoria (profissional ou admin)."""
-    queryset = Category.objects.all().order_by('name')
+    """Lista categorias (professor: só as suas; aluno: só dos profissionais que o vincularam) e cria (professor)."""
     permission_classes = [IsProfessionalOrReadOnly]
     pagination_class = None
+
+    def get_queryset(self):
+        from users.models import ProfessionalStudent
+        user = self.request.user
+        qs = Category.objects.all().order_by('name')
+        if user.role == 'user':
+            pro_ids = ProfessionalStudent.objects.filter(student=user).values_list('professional_id', flat=True)
+            qs = qs.filter(professional__user_id__in=pro_ids)
+        elif user.role in ('professional', 'admin') and hasattr(user, 'professional_profile'):
+            qs = qs.filter(professional=user.professional_profile)
+        elif user.role == 'admin':
+            qs = qs  # admin sem perfil vê todas
+        else:
+            qs = qs.none()
+        return qs
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

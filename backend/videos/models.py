@@ -1,17 +1,33 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import Q
 
 
 class Category(models.Model):
     name = models.CharField('nome', max_length=100)
-    slug = models.SlugField(unique=True, max_length=100)
+    slug = models.SlugField(max_length=100)  # único por profissional (constraint abaixo)
     description = models.TextField('descrição', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    professional = models.ForeignKey(
+        'users.ProfessionalProfile',
+        on_delete=models.CASCADE,
+        related_name='categories',
+        null=True,
+        blank=True,
+        verbose_name='profissional',
+    )
 
     class Meta:
         verbose_name = 'categoria'
         verbose_name_plural = 'categorias'
         ordering = ('name',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=('professional', 'slug'),
+                condition=Q(professional__isnull=False),
+                name='videos_category_prof_slug_uniq',
+            ),
+        ]
 
     def __str__(self):
         return self.name

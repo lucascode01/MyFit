@@ -13,17 +13,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        # Categorias
         categories_data = [
             {'name': 'Musculação', 'slug': 'musculacao', 'description': 'Treinos de força e hipertrofia'},
             {'name': 'Cardio', 'slug': 'cardio', 'description': 'Corrida, bike, HIIT'},
             {'name': 'Mobilidade', 'slug': 'mobilidade', 'description': 'Alongamento e mobilidade'},
             {'name': 'Funcional', 'slug': 'funcional', 'description': 'Treino funcional'},
         ]
-        for data in categories_data:
-            _, created = Category.objects.get_or_create(slug=data['slug'], defaults=data)
-            if created:
-                self.stdout.write(self.style.SUCCESS(f"Categoria criada: {data['name']}"))
 
         # Admin
         admin, created = User.objects.get_or_create(
@@ -45,14 +40,36 @@ class Command(BaseCommand):
             email='pro@gym.local',
             defaults={'username': 'pro', 'role': User.Role.PROFESSIONAL},
         )
+        pro_profile = None
         if created:
             pro.set_password('pro123')
             pro.save()
-            ProfessionalProfile.objects.get_or_create(
+            pro_profile, _ = ProfessionalProfile.objects.get_or_create(
                 user=pro,
                 defaults={'full_name': 'Profissional Teste', 'bio': 'Bio do profissional'},
             )
             self.stdout.write(self.style.SUCCESS('Profissional criado: pro@gym.local / pro123'))
+        else:
+            pro_profile = getattr(pro, 'professional_profile', None)
+
+        # Categorias (vinculadas ao profissional de teste, se existir)
+        if pro_profile:
+            for data in categories_data:
+                _, created_cat = Category.objects.get_or_create(
+                    slug=data['slug'],
+                    professional=pro_profile,
+                    defaults={**data, 'professional': pro_profile},
+                )
+                if created_cat:
+                    self.stdout.write(self.style.SUCCESS(f"Categoria criada: {data['name']}"))
+        else:
+            # Fallback sem professional (categorias não aparecem na listagem por dono)
+            for data in categories_data:
+                _, created_cat = Category.objects.get_or_create(
+                    slug=data['slug'], professional=None, defaults=data
+                )
+                if created_cat:
+                    self.stdout.write(self.style.SUCCESS(f"Categoria criada: {data['name']}"))
 
         # Usuário comum
         user, created = User.objects.get_or_create(
