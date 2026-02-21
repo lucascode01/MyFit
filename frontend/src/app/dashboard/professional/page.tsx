@@ -68,8 +68,6 @@ export default function ProfessionalDashboardPage() {
   const loadCategories = async () => {
     const res = await api<Category[]>('/categories/');
     if (res.success) setCategories(Array.isArray(res.data) ? res.data : []);
-    const res = await api<PaginatedResponse<Video>>('/videos/me/');
-    if (res.success) setVideos(res.data.results ?? []);
   };
 
   const loadStudents = async () => {
