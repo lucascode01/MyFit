@@ -43,7 +43,6 @@ export default function ProfessionalDashboardPage() {
   const [studentError, setStudentError] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
 
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -102,15 +101,6 @@ export default function ProfessionalDashboardPage() {
     setCheckoutLoading(false);
     if (res.success && res.data.checkout_url) {
       window.location.href = res.data.checkout_url;
-    }
-  }
-
-  async function handleStripePortal() {
-    setPortalLoading(true);
-    const res = await apiAuth<{ portal_url: string }>('stripe/portal/', { method: 'POST' });
-    setPortalLoading(false);
-    if (res.success && res.data.portal_url) {
-      window.location.href = res.data.portal_url;
     }
   }
 
@@ -260,24 +250,14 @@ export default function ProfessionalDashboardPage() {
 
   return (
     <div>
-      {/* Assinatura */}
+      {/* Acesso (pagamento único) */}
       <div className="card p-4 sm:p-5 mb-6">
         {hasActiveSubscription ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <p className="text-white/90 font-medium">Assinatura ativa — você pode enviar vídeos e gerenciar alunos.</p>
-            <button
-              type="button"
-              onClick={handleStripePortal}
-              disabled={portalLoading}
-              className="btn-secondary text-sm w-full sm:w-auto"
-            >
-              {portalLoading ? 'Abrindo...' : 'Gerenciar assinatura'}
-            </button>
-          </div>
+          <p className="text-white/90 font-medium">Acesso ativo — você pode enviar vídeos e gerenciar alunos.</p>
         ) : (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-white/90">
-              Assine a mensalidade para enviar vídeos e escolher quais alunos podem assistir ao seu conteúdo.
+              Pague R$ 39,70 uma vez para acessar o sistema e enviar vídeos para os alunos que você vincular.
             </p>
             <button
               type="button"
@@ -285,7 +265,7 @@ export default function ProfessionalDashboardPage() {
               disabled={checkoutLoading}
               className="btn-primary text-sm w-full sm:w-auto"
             >
-              {checkoutLoading ? 'Redirecionando...' : 'Assinar agora'}
+              {checkoutLoading ? 'Redirecionando...' : 'Pagar R$ 39,70'}
             </button>
           </div>
         )}
@@ -558,7 +538,7 @@ export default function ProfessionalDashboardPage() {
       {loading ? (
         <p className="text-white/60 py-4">Carregando...</p>
       ) : !hasActiveSubscription ? (
-        <p className="text-white/60 py-4">Assine para enviar e gerenciar seus vídeos.</p>
+        <p className="text-white/60 py-4">Pague R$ 39,70 para enviar e gerenciar seus vídeos.</p>
       ) : videos.length === 0 ? (
         <p className="text-white/60 py-4">Você ainda não enviou nenhum vídeo.</p>
       ) : (

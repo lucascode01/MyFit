@@ -30,11 +30,14 @@ if not CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append('https://' + h)
             CSRF_TRUSTED_ORIGINS.append('http://' + h)
 
-# Stripe (assinatura mensal para profissionais)
+# Stripe (pagamento único para profissional acessar o sistema — R$ 39,70)
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
-STRIPE_PRICE_ID = config('STRIPE_PRICE_ID', default='')  # ID do preço mensal no Stripe
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
+# Valor em centavos (3970 = R$ 39,70). Moeda: STRIPE_CURRENCY (ex: brl).
+STRIPE_PAYMENT_AMOUNT_CENTS = config('STRIPE_PAYMENT_AMOUNT_CENTS', default=3970, cast=int)
+STRIPE_CURRENCY = config('STRIPE_CURRENCY', default='brl').lower()
+STRIPE_PRODUCT_NAME = config('STRIPE_PRODUCT_NAME', default='Acesso ao sistema - Profissional')
 
 INSTALLED_APPS = [
     'django.contrib.admin',

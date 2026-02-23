@@ -1,5 +1,6 @@
 """
-Stripe: checkout para assinatura mensal e webhook para atualizar status.
+Stripe: pagamento único (R$ 39,70) para o profissional acessar o sistema.
+Checkout em modo 'payment'; webhook checkout.session.completed ativa o acesso.
 """
 import stripe
 from django.conf import settings
@@ -11,18 +12,46 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from core.permissions import IsProfessional, HasActiveSubscription
+from core.permissions import IsProfessional
 from .models import User
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+def _checkout_session_params(user):
+    success_url = settings.FRONTEND_URL.rstrip('/') + '/dashboard/professional?checkout=success'
+    cancel_url = settings.FRONTEND_URL.rstrip('/') + '/dashboard/professional?checkout=cancel'
+    amount = getattr(settings, 'STRIPE_PAYMENT_AMOUNT_CENTS', 3970)
+    currency = getattr(settings, 'STRIPE_CURRENCY', 'brl')
+    product_name = getattr(settings, 'STRIPE_PRODUCT_NAME', 'Acesso ao sistema - Profissional')
+    line_items = [{
+        'price_data': {
+            'currency': currency,
+            'product_data': {'name': product_name},
+            'unit_amount': amount,
+        },
+        'quantity': 1,
+    }]
+    params = {
+        'mode': 'payment',
+        'line_items': line_items,
+        'success_url': success_url,
+        'cancel_url': cancel_url,
+        'metadata': {'user_id': user.id},
+    }
+    if user.stripe_customer_id:
+        params['customer'] = user.stripe_customer_id
+    else:
+        params['customer_email'] = user.email
+    return params
+
+
 class CreateCheckoutSessionView(APIView):
-    """Cria sessão de checkout Stripe para o profissional assinar."""
+    """Cria sessão de checkout Stripe para pagamento único (acesso ao sistema)."""
     permission_classes = [IsAuthenticated, IsProfessional]
 
     def post(self, request):
-        if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_PRICE_ID:
+        if not settings.STRIPE_SECRET_KEY:
             return Response(
                 {'success': False, 'error': {'message': 'Stripe não configurado.'}},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -30,32 +59,11 @@ class CreateCheckoutSessionView(APIView):
         user = request.user
         if user.role != 'professional':
             return Response(
-                {'success': False, 'error': {'message': 'Apenas profissionais podem assinar.'}},
+                {'success': False, 'error': {'message': 'Apenas profissionais podem realizar o pagamento.'}},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        success_url = settings.FRONTEND_URL.rstrip('/') + '/dashboard/professional?checkout=success'
-        cancel_url = settings.FRONTEND_URL.rstrip('/') + '/dashboard/professional?checkout=cancel'
         try:
-            if user.stripe_customer_id:
-                session = stripe.checkout.Session.create(
-                    customer=user.stripe_customer_id,
-                    mode='subscription',
-                    line_items=[{'price': settings.STRIPE_PRICE_ID, 'quantity': 1}],
-                    success_url=success_url,
-                    cancel_url=cancel_url,
-                    metadata={'user_id': user.id},
-                    subscription_data={'metadata': {'user_id': user.id}},
-                )
-            else:
-                session = stripe.checkout.Session.create(
-                    customer_email=user.email,
-                    mode='subscription',
-                    line_items=[{'price': settings.STRIPE_PRICE_ID, 'quantity': 1}],
-                    success_url=success_url,
-                    cancel_url=cancel_url,
-                    metadata={'user_id': user.id},
-                    subscription_data={'metadata': {'user_id': user.id}},
-                )
+            session = stripe.checkout.Session.create(**_checkout_session_params(user))
             return Response({
                 'success': True,
                 'data': {'checkout_url': session.url, 'session_id': session.id},
@@ -68,7 +76,7 @@ class CreateCheckoutSessionView(APIView):
 
 
 class CreatePortalSessionView(APIView):
-    """Link para o portal do cliente Stripe (gerenciar assinatura, cartão)."""
+    """Portal do cliente Stripe (histórico de faturas). Mantido para compatibilidade."""
     permission_classes = [IsAuthenticated, IsProfessional]
 
     def post(self, request):
@@ -80,7 +88,7 @@ class CreatePortalSessionView(APIView):
         user = request.user
         if not user.stripe_customer_id:
             return Response(
-                {'success': False, 'error': {'message': 'Nenhuma assinatura encontrada.'}},
+                {'success': False, 'error': {'message': 'Nenhum pagamento anterior encontrado.'}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return_url = settings.FRONTEND_URL.rstrip('/') + '/dashboard/professional'
@@ -118,44 +126,17 @@ def stripe_webhook(request):
 
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        user_id = (session.get('metadata') or {}).get('user_id') or ((session.get('subscription_data') or {}).get('metadata') or {}).get('user_id')
-        if user_id and session.get('subscription'):
+        user_id = (session.get('metadata') or {}).get('user_id')
+        if not user_id:
+            return HttpResponse(status=200)
+        # Pagamento único (mode=payment): ativa acesso do profissional
+        if session.get('mode') == 'payment':
             try:
                 user = User.objects.get(pk=user_id)
-                user.stripe_customer_id = session.get('customer') or user.stripe_customer_id
-                user.stripe_subscription_id = session['subscription']
+                user.stripe_customer_id = session.get('customer') or user.stripe_customer_id or ''
                 user.subscription_status = User.SubscriptionStatus.ACTIVE
-                user.save(update_fields=['stripe_customer_id', 'stripe_subscription_id', 'subscription_status'])
+                user.save(update_fields=['stripe_customer_id', 'subscription_status'])
             except User.DoesNotExist:
                 pass
-
-    if event['type'] == 'customer.subscription.updated':
-        sub = event['data']['object']
-        user_id = sub.get('metadata', {}).get('user_id')
-        if user_id:
-            status_map = {
-                'active': User.SubscriptionStatus.ACTIVE,
-                'canceled': User.SubscriptionStatus.CANCELED,
-                'past_due': User.SubscriptionStatus.PAST_DUE,
-                'unpaid': User.SubscriptionStatus.UNPAID,
-                'trialing': User.SubscriptionStatus.TRIALING,
-            }
-            new_status = status_map.get(sub['status'], '')
-            try:
-                User.objects.filter(pk=user_id).update(
-                    subscription_status=new_status,
-                    stripe_subscription_id=sub['id'],
-                )
-            except Exception:
-                pass
-
-    if event['type'] == 'customer.subscription.deleted':
-        sub = event['data']['object']
-        user_id = sub.get('metadata', {}).get('user_id')
-        if user_id:
-            User.objects.filter(pk=user_id).update(
-                subscription_status=User.SubscriptionStatus.CANCELED,
-                stripe_subscription_id='',
-            )
 
     return HttpResponse(status=200)
