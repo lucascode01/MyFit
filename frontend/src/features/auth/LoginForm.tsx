@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from './AuthProvider';
+import { PasswordInput } from '@/components/PasswordInput';
 import type { AuthTokens } from '@/types';
 
 export function LoginForm() {
@@ -57,10 +58,9 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <input
-            type="password"
+          <PasswordInput
             placeholder="Senha"
-            className="input-field"
+            className="input-field w-full"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

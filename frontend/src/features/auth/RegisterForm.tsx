@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from './AuthProvider';
+import { PasswordInput } from '@/components/PasswordInput';
 import type { AuthTokens } from '@/types';
 
 type Role = 'user' | 'professional';
@@ -119,19 +120,17 @@ export function RegisterForm() {
               onChange={(e) => setFullName(e.target.value)}
             />
           )}
-          <input
-            type="password"
+          <PasswordInput
             placeholder="Senha"
-            className="input-field"
+            className="input-field w-full"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
             required
           />
-          <input
-            type="password"
+          <PasswordInput
             placeholder="Confirmar senha"
-            className="input-field"
+            className="input-field w-full"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}
             required
