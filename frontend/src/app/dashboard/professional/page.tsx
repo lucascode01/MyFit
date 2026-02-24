@@ -56,8 +56,20 @@ export default function ProfessionalDashboardPage() {
 
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDesc, setNewCategoryDesc] = useState('');
+  const [newCategoryParent, setNewCategoryParent] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const [addingCategory, setAddingCategory] = useState(false);
+
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatDesc, setEditCatDesc] = useState('');
+  const [editCatParent, setEditCatParent] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
+  const [editCatError, setEditCatError] = useState('');
+
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
+  const [deleteCatError, setDeleteCatError] = useState('');
 
   const loadVideos = async () => {
     const res = await api<PaginatedResponse<Video>>('/videos/me/');
@@ -68,6 +80,19 @@ export default function ProfessionalDashboardPage() {
     const res = await api<Category[]>('/categories/');
     if (res.success) setCategories(Array.isArray(res.data) ? res.data : []);
   };
+
+  /** Constrói árvore a partir da lista plana para exibição. */
+  function buildCategoryTree(flat: Category[]): Category[] {
+    const roots = flat.filter((c) => !c.parent);
+    const withChildren = roots.map((root) => ({
+      ...root,
+      children: flat.filter((c) => c.parent === root.id).map((child) => ({
+        ...child,
+        children: flat.filter((c) => c.parent === child.id),
+      })),
+    }));
+    return withChildren;
+  }
 
   const loadStudents = async () => {
     if (!hasActiveSubscription) return;
@@ -80,7 +105,7 @@ export default function ProfessionalDashboardPage() {
   useEffect(() => {
     (async () => {
       const catRes = await api<Category[]>('/categories/');
-      if (catRes.success) setCategories(catRes.data);
+      if (catRes.success && Array.isArray(catRes.data)) setCategories(catRes.data);
       if (hasActiveSubscription) {
         const vidRes = await api<PaginatedResponse<Video>>('/videos/me/');
         if (vidRes.success) setVideos(vidRes.data.results ?? []);
@@ -143,15 +168,66 @@ export default function ProfessionalDashboardPage() {
     setAddingCategory(true);
     const res = await api<Category>('/categories/', {
       method: 'POST',
-      body: JSON.stringify({ name, description: newCategoryDesc.trim() || undefined }),
+      body: JSON.stringify({
+        name,
+        description: newCategoryDesc.trim() || undefined,
+        parent: newCategoryParent ? Number(newCategoryParent) : null,
+      }),
     });
     setAddingCategory(false);
     if (res.success && res.data) {
-      setCategories((c) => [...c, res.data!].sort((a, b) => a.name.localeCompare(b.name)));
+      setCategories((c) => [...c, res.data!].sort((a, b) => (a.display_name || a.name).localeCompare(b.display_name || b.name)));
       setNewCategoryName('');
       setNewCategoryDesc('');
+      setNewCategoryParent('');
     } else {
       setCategoryError(res.error?.message ?? 'Erro ao criar categoria.');
+    }
+  }
+
+  function openEditCategory(cat: Category) {
+    setEditingCategory(cat);
+    setEditCatName(cat.name);
+    setEditCatDesc(cat.description ?? '');
+    setEditCatParent(cat.parent ? String(cat.parent) : '');
+    setEditCatError('');
+  }
+
+  async function handleSaveCategoryEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCategory) return;
+    setEditCatError('');
+    setSavingCategory(true);
+    const res = await api<Category>(`/categories/${editingCategory.id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: editCatName.trim(),
+        description: editCatDesc.trim() || undefined,
+        parent: editCatParent ? Number(editCatParent) : null,
+      }),
+    });
+    setSavingCategory(false);
+    if (res.success && res.data) {
+      setCategories((prev) =>
+        prev.map((c) => (c.id === editingCategory.id ? res.data! : c))
+      );
+      setEditingCategory(null);
+    } else {
+      setEditCatError(res.error?.message ?? 'Erro ao salvar.');
+    }
+  }
+
+  async function handleConfirmDeleteCategory() {
+    if (!categoryToDelete) return;
+    setDeleteCatError('');
+    setDeletingCategory(true);
+    const res = await api<null>(`/categories/${categoryToDelete.id}/`, { method: 'DELETE' });
+    setDeletingCategory(false);
+    if (res.success) {
+      setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
+      setCategoryToDelete(null);
+    } else {
+      setDeleteCatError(res.error?.message ?? 'Não foi possível excluir.');
     }
   }
 
@@ -324,21 +400,33 @@ export default function ProfessionalDashboardPage() {
         <div className="card p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold mb-3">Categorias</h2>
           <p className="text-white/60 text-sm mb-4">
-            Crie categorias para organizar seus vídeos. Ao enviar um vídeo, escolha em qual categoria ele se encaixa.
+            Crie categorias e subcategorias para organizar seus vídeos. Edite ou exclua quando quiser.
           </p>
           <form onSubmit={handleAddCategory} className="space-y-2 mb-4 max-w-md">
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
-                placeholder="Nome da categoria *"
+                placeholder="Nome da categoria ou subcategoria *"
                 className="input-field flex-1"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
               />
               <button type="submit" className="btn-primary shrink-0" disabled={addingCategory}>
-                {addingCategory ? 'Criando...' : 'Criar categoria'}
+                {addingCategory ? 'Criando...' : 'Criar'}
               </button>
             </div>
+            <select
+              className="input-field w-full"
+              value={newCategoryParent}
+              onChange={(e) => setNewCategoryParent(e.target.value)}
+            >
+              <option value="">Nenhum (categoria raiz)</option>
+              {categories.filter((c) => !c.parent).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.display_name || c.name}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder="Descrição (opcional)"
@@ -349,7 +437,40 @@ export default function ProfessionalDashboardPage() {
           </form>
           {categoryError && <p className="text-red-400 text-sm mb-2">{categoryError}</p>}
           {categories.length > 0 && (
-            <p className="text-white/60 text-sm">Categorias disponíveis: {categories.map((c) => c.name).join(', ')}</p>
+            <ul className="space-y-1 mt-4">
+              {buildCategoryTree(categories).map((root) => (
+                <li key={root.id} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2 py-1.5 px-2 rounded bg-white/5">
+                    <span className="font-medium">{root.name}</span>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => openEditCategory(root)} className="text-brand-orange hover:underline text-sm">
+                        Editar
+                      </button>
+                      <button type="button" onClick={() => setCategoryToDelete(root)} className="text-red-400 hover:underline text-sm">
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                  {(root.children ?? []).length > 0 && (
+                    <ul className="pl-4 space-y-1">
+                      {(root.children ?? []).map((child: Category) => (
+                        <li key={child.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded bg-white/5">
+                          <span className="text-white/90">{child.name}</span>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => openEditCategory(child)} className="text-brand-orange hover:underline text-sm">
+                              Editar
+                            </button>
+                            <button type="button" onClick={() => setCategoryToDelete(child)} className="text-red-400 hover:underline text-sm">
+                              Excluir
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}
@@ -414,7 +535,7 @@ export default function ProfessionalDashboardPage() {
               <option value="">Sem categoria</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.display_name || c.name}
                 </option>
               ))}
             </select>
@@ -467,7 +588,7 @@ export default function ProfessionalDashboardPage() {
                 <option value="">Nenhuma</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {c.display_name || c.name}
                   </option>
                 ))}
               </select>
@@ -520,6 +641,81 @@ export default function ProfessionalDashboardPage() {
                 type="button"
                 onClick={() => { setVideoToDelete(null); setDeleteError(''); }}
                 disabled={deleting}
+                className="btn-secondary w-full sm:w-auto"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingCategory && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center p-4 bg-black/70">
+          <div className="card max-w-lg w-full p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-4">Editar categoria</h2>
+            <form onSubmit={handleSaveCategoryEdit} className="space-y-3">
+              <label className="block text-sm text-white/80">Nome</label>
+              <input
+                type="text"
+                value={editCatName}
+                onChange={(e) => setEditCatName(e.target.value)}
+                className="input-field w-full"
+                required
+              />
+              <label className="block text-sm text-white/80">Descrição</label>
+              <input
+                type="text"
+                value={editCatDesc}
+                onChange={(e) => setEditCatDesc(e.target.value)}
+                className="input-field w-full"
+              />
+              <label className="block text-sm text-white/80">Categoria pai</label>
+              <select
+                value={editCatParent}
+                onChange={(e) => setEditCatParent(e.target.value)}
+                className="input-field w-full"
+              >
+                <option value="">Nenhum (raiz)</option>
+                {categories.filter((c) => !c.parent && c.id !== editingCategory.id).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {editCatError && <p className="text-red-400 text-sm">{editCatError}</p>}
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="btn-primary" disabled={savingCategory}>
+                  {savingCategory ? 'Salvando...' : 'Salvar'}
+                </button>
+                <button type="button" onClick={() => setEditingCategory(null)} className="btn-secondary">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {categoryToDelete && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center p-4 bg-black/70">
+          <div className="card max-w-sm w-full p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-2">Excluir categoria</h2>
+            <p className="text-white/80 text-sm mb-4">
+              Excluir &quot;{categoryToDelete.display_name || categoryToDelete.name}&quot;? Subcategorias também serão excluídas. Vídeos desta categoria ficarão sem categoria.
+            </p>
+            {deleteCatError && <p className="text-red-400 text-sm mb-2">{deleteCatError}</p>}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCategory}
+                disabled={deletingCategory}
+                className="btn-primary bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+              >
+                {deletingCategory ? 'Excluindo...' : 'Excluir'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setCategoryToDelete(null); setDeleteCatError(''); }}
+                disabled={deletingCategory}
                 className="btn-secondary w-full sm:w-auto"
               >
                 Cancelar

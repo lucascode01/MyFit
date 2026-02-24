@@ -26,7 +26,7 @@ export default function DashboardPage() {
         api<Category[]>('/categories/'),
         api<PaginatedResponse<Video>>(`/videos/${q ? `?${q}` : ''}`),
       ]);
-      if (catRes.success) setCategories(catRes.data);
+      if (catRes.success && Array.isArray(catRes.data)) setCategories(catRes.data);
       if (vidRes.success) setVideos(vidRes.data.results ?? []);
       setLoading(false);
     })();
@@ -44,7 +44,7 @@ export default function DashboardPage() {
           <option value="">Todas as categorias</option>
           {categories.map((c) => (
             <option key={c.id} value={c.slug}>
-              {c.name}
+              {c.display_name || c.name}
             </option>
           ))}
         </select>

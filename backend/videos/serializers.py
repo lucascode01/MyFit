@@ -4,17 +4,52 @@ from users.models import ProfessionalProfile
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(read_only=True)
+    parent_name = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ('id', 'name', 'slug', 'description', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ('id', 'name', 'slug', 'description', 'parent', 'parent_name', 'display_name', 'created_at')
+        read_only_fields = ('id', 'slug', 'created_at')
+
+    def get_parent_name(self, obj):
+        return obj.parent.name if obj.parent_id else None
+
+    def get_display_name(self, obj):
+        if obj.parent_id:
+            return f'{obj.parent.name} › {obj.name}'
+        return obj.name
+
+
+class CategoryTreeSerializer(serializers.ModelSerializer):
+    """Categoria com children aninhados para exibição em árvore."""
+    children = serializers.SerializerMethodField()
+    parent_name = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ('id', 'name', 'slug', 'description', 'parent', 'parent_name', 'display_name', 'children', 'created_at')
+
+    def get_children(self, obj):
+        qs = getattr(obj, 'prefetched_children', None) or obj.children.all()
+        return CategoryTreeSerializer(qs, many=True).data
+
+    def get_parent_name(self, obj):
+        return obj.parent.name if obj.parent_id else None
+
+    def get_display_name(self, obj):
+        if obj.parent_id:
+            return f'{obj.parent.name} › {obj.name}'
+        return obj.name
 
 
 class CategoryCreateSerializer(serializers.ModelSerializer):
-    """Criação de categoria: slug gerado a partir do nome; pertence ao profissional logado."""
+    """Criação de categoria ou subcategoria: slug gerado; pertence ao profissional logado."""
     class Meta:
         model = Category
-        fields = ('name', 'description')
+        fields = ('name', 'description', 'parent')
 
     def create(self, validated_data):
         from django.utils.text import slugify
@@ -25,15 +60,37 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
         name = validated_data.get('name', '').strip()
         if not name:
             raise serializers.ValidationError({'name': 'Nome é obrigatório.'})
+        parent = validated_data.get('parent')
+        if parent and parent.professional_id != professional.pk:
+            raise serializers.ValidationError({'parent': 'Só é possível usar categorias suas como pai.'})
         base_slug = slugify(name) or 'categoria'
         slug = base_slug
         n = 0
-        while Category.objects.filter(professional=professional, slug=slug).exists():
+        while Category.objects.filter(professional=professional, parent=parent, slug=slug).exists():
             n += 1
             slug = f'{base_slug}-{n}'
         validated_data['slug'] = slug
         validated_data['professional'] = professional
         return Category.objects.create(**validated_data)
+
+
+class CategoryUpdateSerializer(serializers.ModelSerializer):
+    """Atualização de categoria: name, description, parent."""
+    class Meta:
+        model = Category
+        fields = ('name', 'description', 'parent')
+
+    def validate_parent(self, value):
+        request = self.context.get('request')
+        profile = getattr(request.user, 'professional_profile', None) if request else None
+        if value and profile and value.professional_id != profile.pk:
+            raise serializers.ValidationError('Só é possível usar categorias suas como pai.')
+        instance = self.instance
+        if instance and value and value.pk == instance.pk:
+            raise serializers.ValidationError('Uma categoria não pode ser pai de si mesma.')
+        if instance and value and value.parent_id and value.parent_id == instance.pk:
+            raise serializers.ValidationError('Não é possível criar ciclo na árvore.')
+        return value
 
 
 class VideoListSerializer(serializers.ModelSerializer):

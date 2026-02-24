@@ -5,7 +5,9 @@ from core.permissions import IsProfessional, IsProfessionalOrReadOnly, IsOwnerOr
 from .models import Category, Video
 from .serializers import (
     CategorySerializer,
+    CategoryTreeSerializer,
     CategoryCreateSerializer,
+    CategoryUpdateSerializer,
     VideoListSerializer,
     VideoDetailSerializer,
     VideoCreateUpdateSerializer,
@@ -13,30 +15,43 @@ from .serializers import (
 from .filters import VideoFilter
 
 
+def _category_queryset(request):
+    from users.models import ProfessionalStudent
+    user = request.user
+    qs = Category.objects.all().select_related('parent').order_by('name')
+    if user.role == 'user':
+        pro_ids = ProfessionalStudent.objects.filter(student=user).values_list('professional_id', flat=True)
+        qs = qs.filter(professional__user_id__in=pro_ids)
+    elif user.role in ('professional', 'admin') and hasattr(user, 'professional_profile'):
+        qs = qs.filter(professional=user.professional_profile)
+    elif user.role == 'admin':
+        pass
+    else:
+        qs = qs.none()
+    return qs
+
+
 class CategoryListCreateView(generics.ListCreateAPIView):
-    """Lista categorias (professor: só as suas; aluno: só dos profissionais que o vincularam) e cria (professor)."""
+    """Lista categorias (em árvore se ?tree=1) e cria categoria/subcategoria (professor)."""
     permission_classes = [IsProfessionalOrReadOnly]
     pagination_class = None
 
     def get_queryset(self):
-        from users.models import ProfessionalStudent
-        user = self.request.user
-        qs = Category.objects.all().order_by('name')
-        if user.role == 'user':
-            pro_ids = ProfessionalStudent.objects.filter(student=user).values_list('professional_id', flat=True)
-            qs = qs.filter(professional__user_id__in=pro_ids)
-        elif user.role in ('professional', 'admin') and hasattr(user, 'professional_profile'):
-            qs = qs.filter(professional=user.professional_profile)
-        elif user.role == 'admin':
-            qs = qs  # admin sem perfil vê todas
-        else:
-            qs = qs.none()
-        return qs
+        return _category_queryset(self.request)
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return CategoryCreateSerializer
+        if self.request.query_params.get('tree') == '1':
+            return CategoryTreeSerializer
         return CategorySerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if request.query_params.get('tree') == '1':
+            queryset = queryset.filter(parent__isnull=True).prefetch_related('children__children')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -46,6 +61,38 @@ class CategoryListCreateView(generics.ListCreateAPIView):
             'success': True,
             'data': CategorySerializer(serializer.instance).data,
         }, status=201)
+
+
+class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, atualizar e excluir categoria ou subcategoria (dono ou admin)."""
+    permission_classes = [IsProfessional]
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        return _category_queryset(self.request)
+
+    def get_serializer_class(self):
+        if self.request.method in ('PATCH', 'PUT'):
+            return CategoryUpdateSerializer
+        return CategorySerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = CategorySerializer(instance)
+        return Response({'success': True, 'data': serializer.data})
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', request.method == 'PATCH')
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'data': CategorySerializer(instance).data})
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=204)
 
 
 class VideoListView(generics.ListAPIView):

@@ -5,8 +5,16 @@ from django.db.models import Q
 
 class Category(models.Model):
     name = models.CharField('nome', max_length=100)
-    slug = models.SlugField(max_length=100)  # único por profissional (constraint abaixo)
+    slug = models.SlugField(max_length=100)
     description = models.TextField('descrição', blank=True)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        verbose_name='categoria pai',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     professional = models.ForeignKey(
         'users.ProfessionalProfile',
@@ -23,9 +31,9 @@ class Category(models.Model):
         ordering = ('name',)
         constraints = [
             models.UniqueConstraint(
-                fields=('professional', 'slug'),
+                fields=('professional', 'parent', 'slug'),
                 condition=Q(professional__isnull=False),
-                name='videos_category_prof_slug_uniq',
+                name='videos_category_prof_parent_slug_uniq',
             ),
         ]
 

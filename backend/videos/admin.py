@@ -4,9 +4,10 @@ from .models import Category, Video
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'created_at')
+    list_display = ('name', 'slug', 'parent', 'professional', 'created_at')
+    list_filter = ('parent',)
     search_fields = ('name', 'slug')
-    prepopulated_fields = {'slug': ('name',)}
+    raw_id_fields = ('parent', 'professional')
 
 
 @admin.register(Video)

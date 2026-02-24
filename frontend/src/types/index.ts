@@ -44,7 +44,11 @@ export interface Category {
   name: string;
   slug: string;
   description: string;
+  parent: number | null;
+  parent_name: string | null;
+  display_name: string;
   created_at: string;
+  children?: Category[];
 }
 
 export interface Video {
