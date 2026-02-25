@@ -12,7 +12,11 @@ export function Header() {
   return (
     <header className="border-b border-white/10 sticky top-0 z-50 bg-brand-black/95 backdrop-blur supports-[backdrop-filter]:bg-brand-black/80">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 shrink-0">
+        <Link
+          href={user ? '/dashboard' : '/'}
+          className="flex items-center gap-2 shrink-0"
+          onClick={() => setMenuOpen(false)}
+        >
           <Image
             src="/logo.png"
             alt="MY personal"
@@ -20,7 +24,7 @@ export function Header() {
             height={48}
             className="object-contain h-8 sm:h-10 w-auto"
           />
-        </div>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-4">

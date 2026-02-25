@@ -32,14 +32,12 @@ def _checkout_session_params(user):
         },
         'quantity': 1,
     }]
-    # Apenas cartão, para evitar erro de redirecionamento quando a conta não tem PIX habilitado.
     params = {
         'mode': 'payment',
         'line_items': line_items,
         'success_url': success_url,
         'cancel_url': cancel_url,
         'metadata': {'user_id': user.id},
-        'payment_method_types': ['card'],
     }
     if user.stripe_customer_id:
         params['customer'] = user.stripe_customer_id

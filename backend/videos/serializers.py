@@ -96,7 +96,6 @@ class CategoryUpdateSerializer(serializers.ModelSerializer):
 class VideoListSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
     professional_name = serializers.SerializerMethodField()
-    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Video
@@ -108,24 +107,12 @@ class VideoListSerializer(serializers.ModelSerializer):
             'thumbnail',
             'categories',
             'professional_name',
-            'can_edit',
             'created_at',
             'updated_at',
         )
 
     def get_professional_name(self, obj):
         return obj.professional.full_name or obj.professional.user.email
-
-    def get_can_edit(self, obj):
-        request = self.context.get('request')
-        if not request or not getattr(request, 'user', None) or not request.user.is_authenticated:
-            return False
-        user = request.user
-        if user.role == 'admin':
-            return True
-        if user.role == 'professional':
-            return getattr(obj.professional, 'user_id', None) == user.id
-        return False
 
 
 class VideoDetailSerializer(serializers.ModelSerializer):

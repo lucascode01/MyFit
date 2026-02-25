@@ -1,6 +1,6 @@
 # Passo a passo: integrar a API da Stripe para cobrança dos professores
 
-O sistema usa **pagamento único** (não recorrência): o profissional (professor) paga **R$ 39,70** uma vez para liberar o acesso (enviar vídeos, categorias, alunos). O checkout aceita **apenas cartão** (pagamento estável e redirecionamento garantido). O backend e o frontend já estão implementados; basta configurar a Stripe e as variáveis de ambiente.
+O sistema usa **pagamento único** (não recorrência): o profissional (professor) paga **R$ 39,70** uma vez para liberar o acesso (enviar vídeos, categorias, alunos). O backend e o frontend já estão implementados; basta configurar a Stripe e as variáveis de ambiente.
 
 ---
 
