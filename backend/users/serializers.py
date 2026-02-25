@@ -63,6 +63,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             'cref',
         )
 
+    def validate_username(self, value):
+        if not value or not value.strip():
+            return value
+        raw = value.strip()
+        if ' ' in raw:
+            raise serializers.ValidationError('Nome de usuário não pode conter espaços. Use apenas letras, números e underline.')
+        return raw.lower()
+
     def validate(self, data):
         if data.get('password') != data.get('password_confirm'):
             raise serializers.ValidationError({'password_confirm': 'Senhas não conferem.'})
