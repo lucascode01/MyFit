@@ -43,6 +43,7 @@ export default function ProfessionalDashboardPage() {
   const [studentError, setStudentError] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
 
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -121,11 +122,22 @@ export default function ProfessionalDashboardPage() {
   }, [hasActiveSubscription]);
 
   async function handleStripeCheckout() {
+    setCheckoutError('');
     setCheckoutLoading(true);
-    const res = await apiAuth<{ checkout_url: string }>('stripe/checkout/', { method: 'POST' });
-    setCheckoutLoading(false);
-    if (res.success && res.data.checkout_url) {
-      window.location.href = res.data.checkout_url;
+    try {
+      const res = await apiAuth<{ checkout_url?: string; url?: string }>('stripe/checkout/', { method: 'POST' });
+      if (res.success && res.data) {
+        const url = res.data.checkout_url ?? (res.data as { url?: string }).url;
+        if (url) {
+          window.location.href = url;
+          return;
+        }
+      }
+      setCheckoutError(res.success ? 'Não foi possível obter o link de pagamento.' : (res.error?.message ?? 'Erro ao iniciar pagamento. Tente de novo.'));
+    } catch (e) {
+      setCheckoutError('Erro de conexão. Verifique a internet e tente novamente.');
+    } finally {
+      setCheckoutLoading(false);
     }
   }
 
@@ -344,6 +356,7 @@ export default function ProfessionalDashboardPage() {
               {checkoutLoading ? 'Redirecionando...' : 'Pagar R$ 39,70'}
             </button>
           </div>
+          {checkoutError && <p className="text-red-400 text-sm mt-2">{checkoutError}</p>}
         )}
       </div>
 

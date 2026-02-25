@@ -32,25 +32,15 @@ def _checkout_session_params(user):
         },
         'quantity': 1,
     }]
-    # PIX só é incluído se STRIPE_PIX_ENABLED=True; muitas contas Stripe não têm PIX (convite/60 dias).
-    payment_method_types = ['card']
-    pix_enabled = getattr(settings, 'STRIPE_PIX_ENABLED', False) and currency == 'brl'
-    if pix_enabled:
-        payment_method_types.append('pix')
+    # Apenas cartão, para evitar erro de redirecionamento quando a conta não tem PIX habilitado.
     params = {
         'mode': 'payment',
         'line_items': line_items,
         'success_url': success_url,
         'cancel_url': cancel_url,
         'metadata': {'user_id': user.id},
-        'payment_method_types': payment_method_types,
+        'payment_method_types': ['card'],
     }
-    if pix_enabled:
-        pix_expires = getattr(settings, 'STRIPE_PIX_EXPIRES_AFTER_SECONDS', None)
-        if pix_expires is not None:
-            params['payment_method_options'] = {
-                'pix': {'expires_after_seconds': int(pix_expires)},
-            }
     if user.stripe_customer_id:
         params['customer'] = user.stripe_customer_id
     else:
