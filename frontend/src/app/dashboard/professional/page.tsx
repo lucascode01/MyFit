@@ -337,7 +337,8 @@ export default function ProfessionalDashboardPage() {
   }
 
   return (
-    <div>
+    <>
+      <div>
       {/* Acesso (pagamento único) */}
       <div className="card p-4 sm:p-5 mb-6">
         {hasActiveSubscription ? (
@@ -774,6 +775,7 @@ export default function ProfessionalDashboardPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
