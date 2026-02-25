@@ -44,9 +44,9 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6 sm:p-6 pb-safe-bottom">
-      <Link href="/" className="mb-6 sm:mb-8 shrink-0">
+      <div className="mb-6 sm:mb-8 shrink-0">
         <Image src="/logo.png" alt="MY personal" width={200} height={80} className="object-contain w-[180px] sm:w-[200px] h-auto" priority />
-      </Link>
+      </div>
       <div className="w-full max-w-sm card p-4 sm:p-6">
         <h1 className="text-xl sm:text-2xl font-semibold text-center mb-5 sm:mb-6">Entrar</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
