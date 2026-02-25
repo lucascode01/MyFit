@@ -59,6 +59,7 @@ export interface Video {
   thumbnail: string | null;
   categories: Category[];
   professional_name: string;
+  can_edit?: boolean;
   created_at: string;
   updated_at: string;
 }
