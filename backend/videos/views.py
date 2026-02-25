@@ -101,7 +101,7 @@ class VideoListView(generics.ListAPIView):
     filterset_class = VideoFilter
 
     def get_queryset(self):
-        qs = Video.objects.filter(is_active=True).select_related('category', 'professional', 'professional__user')
+        qs = Video.objects.filter(is_active=True).select_related('professional', 'professional__user').prefetch_related('categories')
         user = self.request.user
         if user.role == 'user':
             # Aluno: apenas vídeos dos profissionais que o têm como aluno
@@ -120,7 +120,7 @@ class VideoDetailView(generics.RetrieveAPIView):
     serializer_class = VideoDetailSerializer
 
     def get_queryset(self):
-        qs = Video.objects.filter(is_active=True).select_related('category', 'professional', 'professional__user')
+        qs = Video.objects.filter(is_active=True).select_related('professional', 'professional__user').prefetch_related('categories')
         if self.request.user.role == 'user':
             from users.models import ProfessionalStudent
             pro_ids = ProfessionalStudent.objects.filter(student=self.request.user).values_list('professional_id', flat=True)
@@ -155,7 +155,7 @@ class VideoMyListView(generics.ListAPIView):
     def get_queryset(self):
         return Video.objects.filter(
             professional__user=self.request.user
-        ).select_related('category', 'professional', 'professional__user')
+        ).select_related('professional', 'professional__user').prefetch_related('categories')
 
 
 class VideoUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -164,7 +164,7 @@ class VideoUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsProfessional, IsOwnerOrAdmin]
 
     def get_queryset(self):
-        return Video.objects.select_related('category', 'professional', 'professional__user')
+        return Video.objects.select_related('professional', 'professional__user').prefetch_related('categories')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

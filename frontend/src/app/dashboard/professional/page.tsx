@@ -32,7 +32,7 @@ export default function ProfessionalDashboardPage() {
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDesc, setUploadDesc] = useState('');
   const [uploadUrl, setUploadUrl] = useState('');
-  const [uploadCategory, setUploadCategory] = useState('');
+  const [uploadCategories, setUploadCategories] = useState<number[]>([]);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -47,7 +47,7 @@ export default function ProfessionalDashboardPage() {
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
-  const [editCategory, setEditCategory] = useState('');
+  const [editCategories, setEditCategories] = useState<number[]>([]);
   const [editError, setEditError] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<Video | null>(null);
@@ -235,7 +235,7 @@ export default function ProfessionalDashboardPage() {
     setEditingVideo(video);
     setEditTitle(video.title);
     setEditDesc(video.description ?? '');
-    setEditCategory(video.category ? String(video.category.id) : '');
+    setEditCategories(video.categories?.map((c) => c.id) ?? []);
     setEditError('');
   }
 
@@ -249,7 +249,7 @@ export default function ProfessionalDashboardPage() {
       body: JSON.stringify({
         title: editTitle.trim(),
         description: editDesc.trim(),
-        category: editCategory ? Number(editCategory) : null,
+        categories: editCategories,
       }),
     });
     setSavingEdit(false);
@@ -285,14 +285,14 @@ export default function ProfessionalDashboardPage() {
       form.append('title', uploadTitle);
       form.append('description', uploadDesc);
       form.append('video_file', uploadFile);
-      if (uploadCategory) form.append('category', uploadCategory);
+      uploadCategories.forEach((id) => form.append('categories', String(id)));
       const res = await apiFormData<Video>('/videos/upload/', form);
       if (res.success) {
         setVideos((v) => [res.data!, ...v]);
         setUploadOpen(false);
         setUploadTitle('');
         setUploadDesc('');
-        setUploadCategory('');
+        setUploadCategories([]);
         setUploadFile(null);
       } else {
         setUploadError(res.error!.message);
@@ -304,7 +304,7 @@ export default function ProfessionalDashboardPage() {
           title: uploadTitle,
           description: uploadDesc,
           video_url: uploadUrl,
-          category: uploadCategory ? Number(uploadCategory) : null,
+          categories: uploadCategories,
         }),
       });
       if (res.success) {
@@ -313,7 +313,7 @@ export default function ProfessionalDashboardPage() {
         setUploadTitle('');
         setUploadDesc('');
         setUploadUrl('');
-        setUploadCategory('');
+        setUploadCategories([]);
         setUploadError('');
       } else {
         setUploadError(res.error!.message);
@@ -527,18 +527,25 @@ export default function ProfessionalDashboardPage() {
                 onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
               />
             </div>
-            <select
-              className="input-field w-full"
-              value={uploadCategory}
-              onChange={(e) => setUploadCategory(e.target.value)}
-            >
-              <option value="">Sem categoria</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.display_name || c.name}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-sm text-white/70 mb-1">Categorias (pode escolher várias)</label>
+              <select
+                multiple
+                className="input-field w-full min-h-[100px]"
+                value={uploadCategories.map(String)}
+                onChange={(e) => {
+                  const sel = e.target;
+                  setUploadCategories(Array.from(sel.selectedOptions).map((o) => Number(o.value)));
+                }}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.display_name || c.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-white/50 text-xs mt-1">Segure Ctrl (ou Cmd no Mac) para selecionar mais de uma.</p>
+            </div>
             {uploadError && <p className="text-red-400 text-sm">{uploadError}</p>}
             <div className="flex flex-col sm:flex-row gap-2">
               <button type="submit" className="btn-primary w-full sm:w-auto" disabled={uploading}>
@@ -579,19 +586,23 @@ export default function ProfessionalDashboardPage() {
                 className="input-field min-h-[80px]"
                 rows={3}
               />
-              <label className="text-sm text-white/80">Categoria</label>
+              <label className="text-sm text-white/80">Categorias (pode escolher várias)</label>
               <select
-                value={editCategory}
-                onChange={(e) => setEditCategory(e.target.value)}
-                className="input-field"
+                multiple
+                className="input-field min-h-[100px]"
+                value={editCategories.map(String)}
+                onChange={(e) => {
+                  const sel = e.target;
+                  setEditCategories(Array.from(sel.selectedOptions).map((o) => Number(o.value)));
+                }}
               >
-                <option value="">Nenhuma</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.display_name || c.name}
                   </option>
                 ))}
               </select>
+              <p className="text-white/50 text-xs mt-1">Segure Ctrl (ou Cmd) para múltipla seleção.</p>
               {editError && <p className="text-red-400 text-sm">{editError}</p>}
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <button type="submit" className="btn-primary w-full sm:w-auto" disabled={savingEdit}>

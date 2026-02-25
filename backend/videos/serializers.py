@@ -94,7 +94,7 @@ class CategoryUpdateSerializer(serializers.ModelSerializer):
 
 
 class VideoListSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
     professional_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -105,7 +105,7 @@ class VideoListSerializer(serializers.ModelSerializer):
             'description',
             'url',
             'thumbnail',
-            'category',
+            'categories',
             'professional_name',
             'created_at',
             'updated_at',
@@ -116,7 +116,7 @@ class VideoListSerializer(serializers.ModelSerializer):
 
 
 class VideoDetailSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
     professional_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -127,7 +127,7 @@ class VideoDetailSerializer(serializers.ModelSerializer):
             'description',
             'url',
             'thumbnail',
-            'category',
+            'categories',
             'professional',
             'professional_name',
             'created_at',
@@ -148,22 +148,34 @@ class VideoCreateUpdateSerializer(serializers.ModelSerializer):
             'video_url',
             'video_file',
             'thumbnail',
-            'category',
+            'categories',
             'is_active',
         )
 
     def create(self, validated_data):
         professional = self.context['request'].user.professional_profile
+        categories = validated_data.pop('categories', [])
         validated_data['is_active'] = True
-        return Video.objects.create(professional=professional, **validated_data)
+        video = Video.objects.create(professional=professional, **validated_data)
+        if categories:
+            video.categories.set(categories)
+        return video
 
-    def validate_category(self, value):
-        if value is None:
-            return value
-        if not Category.objects.filter(pk=value.pk).exists():
-            raise serializers.ValidationError('Categoria inválida.')
+    def update(self, instance, validated_data):
+        categories = validated_data.pop('categories', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if categories is not None:
+            instance.categories.set(categories)
+        return instance
+
+    def validate_categories(self, value):
         request = self.context.get('request')
         profile = getattr(request.user, 'professional_profile', None) if request else None
-        if profile and value.professional_id is not None and value.professional_id != profile.pk:
-            raise serializers.ValidationError('Só é possível usar categorias que você criou.')
-        return value
+        for cat in value or []:
+            if not Category.objects.filter(pk=cat.pk).exists():
+                raise serializers.ValidationError('Categoria inválida.')
+            if profile and cat.professional_id is not None and cat.professional_id != profile.pk:
+                raise serializers.ValidationError('Só é possível usar categorias que você criou.')
+        return value or []

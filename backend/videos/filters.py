@@ -4,8 +4,8 @@ from .models import Video
 
 
 class VideoFilter(filters.FilterSet):
-    category = filters.NumberFilter(field_name='category_id')
-    category_slug = filters.CharFilter(field_name='category__slug')
+    category = filters.NumberFilter(field_name='categories__id')
+    category_slug = filters.CharFilter(field_name='categories__slug')
     professional = filters.NumberFilter(field_name='professional__user_id')
     search = filters.CharFilter(method='filter_search')
 

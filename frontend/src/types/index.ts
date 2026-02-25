@@ -57,7 +57,7 @@ export interface Video {
   description: string;
   url: string;
   thumbnail: string | null;
-  category: Category | null;
+  categories: Category[];
   professional_name: string;
   created_at: string;
   updated_at: string;

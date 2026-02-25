@@ -12,7 +12,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ('title', 'professional', 'category', 'is_active', 'created_at')
-    list_filter = ('is_active', 'category')
+    list_display = ('title', 'professional', 'is_active', 'created_at')
+    list_filter = ('is_active', 'categories')
     search_fields = ('title', 'description')
     raw_id_fields = ('professional',)
+    filter_horizontal = ('categories',)
