@@ -1,6 +1,6 @@
 # Passo a passo: integrar a API da Stripe para cobrança dos professores
 
-O sistema usa **pagamento único** (não recorrência): o profissional (professor) paga **R$ 39,70** uma vez para liberar o acesso (enviar vídeos, categorias, alunos). O backend e o frontend já estão implementados; basta configurar a Stripe e as variáveis de ambiente.
+O sistema usa **pagamento único** (não recorrência): o profissional (professor) paga **R$ 39,70** uma vez para liberar o acesso (enviar vídeos, categorias, alunos). O checkout aceita **cartão** e **PIX** (moeda BRL). O backend e o frontend já estão implementados; basta configurar a Stripe e as variáveis de ambiente.
 
 ---
 
@@ -75,6 +75,7 @@ Configure no seu backend (`.env` ou variáveis do Railway/outro host):
 | `STRIPE_PAYMENT_AMOUNT_CENTS` | Não | Valor em centavos. Padrão: `3970` (R$ 39,70) |
 | `STRIPE_CURRENCY` | Não | Moeda. Padrão: `brl` |
 | `STRIPE_PRODUCT_NAME` | Não | Nome do produto na tela de checkout. Padrão: `Acesso ao sistema - Profissional` |
+| `STRIPE_PIX_EXPIRES_AFTER_SECONDS` | Não | Tempo para pagar via PIX (segundos; 10–1209600). Se não definir, Stripe usa 1 dia. |
 | `FRONTEND_URL` | Sim | URL do frontend (ex.: `https://meu-app.railway.app`) para redirecionar após o pagamento |
 
 \* O fluxo atual usa apenas o backend para criar a sessão de checkout; a publishable key pode ficar para uso futuro.
@@ -106,6 +107,7 @@ FRONTEND_URL=http://localhost:3000
 ## 6. Testar
 
 - **Cartão de teste (modo teste):** use por exemplo `4242 4242 4242 4242`, qualquer data futura e CVC.
+- **PIX:** na mesma tela de checkout o cliente pode escolher “Pagar com PIX”; o QR code e a chave copia-e-cola são exibidos pela Stripe. Em modo teste, consulte a documentação da Stripe para simular pagamento PIX.
 - Após o pagamento, confira no Dashboard Stripe em **Payments** que o pagamento apareceu.
 - Em **Webhooks** → seu endpoint → verifique que o evento `checkout.session.completed` foi enviado e retornou 200.
 
@@ -118,6 +120,6 @@ Se o webhook falhar (por exemplo URL inacessível ou secret errado), o pagamento
 1. Criar conta Stripe e pegar **API keys** (Secret + Publishable).
 2. Criar **Webhook** com URL `https://SEU_BACKEND/api/webhooks/stripe/` e evento `checkout.session.completed`; copiar **Signing secret**.
 3. Definir no backend: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `FRONTEND_URL`.
-4. (Opcional) Ajustar valor e nome: `STRIPE_PAYMENT_AMOUNT_CENTS`, `STRIPE_CURRENCY`, `STRIPE_PRODUCT_NAME`.
+4. (Opcional) Ajustar valor e nome: `STRIPE_PAYMENT_AMOUNT_CENTS`, `STRIPE_CURRENCY`, `STRIPE_PRODUCT_NAME`. Para PIX, opcional: `STRIPE_PIX_EXPIRES_AFTER_SECONDS`.
 
 Para mudar o valor no futuro (ex.: R$ 49,90), altere `STRIPE_PAYMENT_AMOUNT_CENTS` para o valor em centavos (ex.: `4990`) e, se quiser, o texto no frontend na tela do profissional.

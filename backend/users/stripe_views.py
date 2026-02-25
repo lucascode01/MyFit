@@ -38,7 +38,14 @@ def _checkout_session_params(user):
         'success_url': success_url,
         'cancel_url': cancel_url,
         'metadata': {'user_id': user.id},
+        'payment_method_types': ['card', 'pix'],
     }
+    # PIX: tempo para pagar (segundos). Padrão Stripe: 1 dia. Opcional via settings.
+    pix_expires = getattr(settings, 'STRIPE_PIX_EXPIRES_AFTER_SECONDS', None)
+    if pix_expires is not None and currency == 'brl':
+        params['payment_method_options'] = {
+            'pix': {'expires_after_seconds': int(pix_expires)},
+        }
     if user.stripe_customer_id:
         params['customer'] = user.stripe_customer_id
     else:

@@ -38,6 +38,8 @@ STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
 STRIPE_PAYMENT_AMOUNT_CENTS = config('STRIPE_PAYMENT_AMOUNT_CENTS', default=3970, cast=int)
 STRIPE_CURRENCY = config('STRIPE_CURRENCY', default='brl').lower()
 STRIPE_PRODUCT_NAME = config('STRIPE_PRODUCT_NAME', default='Acesso ao sistema - Profissional')
+# PIX: tempo em segundos para o cliente pagar (10 a 1209600). Opcional; se não definir, Stripe usa 1 dia.
+STRIPE_PIX_EXPIRES_AFTER_SECONDS = config('STRIPE_PIX_EXPIRES_AFTER_SECONDS', default=None)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
