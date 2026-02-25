@@ -6,14 +6,20 @@ import type { Video, Category } from '@/types';
 import type { PaginatedResponse } from '@/types';
 import { VideoCard } from '@/features/videos/VideoCard';
 import { VideoPlayer } from '@/features/videos/VideoPlayer';
+import { useAuth } from '@/features/auth/AuthProvider';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySlug, setCategorySlug] = useState<string>('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+
+  /** Mostrar Editar/Excluir: API envia can_edit ou, como fallback, usuário é profissional/admin. */
+  const canShowActions = (v: Video) =>
+    v.can_edit === true || user?.role === 'professional' || user?.role === 'admin';
 
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -130,8 +136,8 @@ export default function DashboardPage() {
               key={v.id}
               video={v}
               onClick={() => setSelectedVideo(v)}
-              onEdit={v.can_edit ? () => openEditModal(v) : undefined}
-              onDelete={v.can_edit ? () => setVideoToDelete(v) : undefined}
+              onEdit={canShowActions(v) ? () => openEditModal(v) : undefined}
+              onDelete={canShowActions(v) ? () => setVideoToDelete(v) : undefined}
             />
           ))}
         </div>
