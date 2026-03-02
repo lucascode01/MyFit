@@ -37,7 +37,6 @@ export function VideoCard({ video, onClick, onEdit, onDelete }: VideoCardProps) 
         </div>
         <div className="p-3 sm:p-4">
           <h3 className="font-medium truncate text-sm sm:text-base">{video.title}</h3>
-          <p className="text-white/60 text-xs sm:text-sm truncate mt-0.5">{video.professional_name}</p>
           {video.categories?.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {video.categories.map((c) => (
